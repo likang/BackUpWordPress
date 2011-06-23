@@ -81,7 +81,8 @@ add_action( 'admin_init', 'hmbkp_actions' );
 
 // Load the admin menu
 require_once( HMBKP_PLUGIN_PATH . '/admin.menus.php' );
-require_once( HMBKP_PLUGIN_PATH . '/snda_oauth.php' );
+require_once( HMBKP_PLUGIN_PATH . '/everbox/EverboxClient.php' );
+require_once( HMBKP_PLUGIN_PATH . '/everbox/SNDAOAuthHTTPClient.php' );
 
 // Load the core functions
 require_once( HMBKP_PLUGIN_PATH . '/functions/core.functions.php' );

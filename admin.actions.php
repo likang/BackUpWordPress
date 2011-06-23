@@ -71,7 +71,7 @@ function hmbkp_request_save_to_everbox() {
   session_start();
   if ( !isset( $_SESSION['sdid'] )) {
     if ( !isset( $_GET['sdid']))
-      hmbkp_request_token($_GET['hmbkp_save_to_everbox']);
+      hmbkp_request_everbox_token($_GET['hmbkp_save_to_everbox']);
     
     $_SESSION['sdid'] = $_GET['sdid'];
     $_SESSION['snda_token'] = $_GET['snda_token'];

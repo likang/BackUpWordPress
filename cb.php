@@ -1,27 +1,25 @@
 <?php 
-require 'snda_oauth.php';
-$config = getSndaConfig();
-$snda_oauth = new OauthSDK($config['appId'], $config['appSecret'], $config['redirectURI']);
-$code = $_GET["code"];
-$access_token = $snda_oauth->getAccessToken($code);
-?>
-<?php 
-if (!$snda_oauth->getLastErrCode()) {
-  $sdid = $access_token['sdid'];
+require_once 'everbox/EverboxClient.php';
+require_once 'everbox/SNDAOAuthHTTPClient.php';
+$config = include 'everbox/apipool.config.php';
+$http = new SNDAOAuthHTTPClient($config);
+$code = isset($_GET["code"]) ? trim($_GET['code']) : "";
+try {
+  $token = $http->fetchAccessToken($code);
+  $sdid = $token['sdid'];
   //echo 'sdid:'.$sdid."<br>";
-  $access_token = $access_token['access_token'];
+  $access_token = $token['access_token'];
   //echo 'access_token:'.$access_token."<br>";
   $state =$_GET['state'];
   $state = str_replace("__equal__","=",$state);
   $state = str_replace("__and__","&",$state);
-  $state = $state."&sdid=".$sdid."&snda_token=".$access_token;
+  $url = $state."&sdid=".$sdid."&snda_token=".$access_token;
+
   //echo 'state:'.$state."<br>";
   Header("HTTP/1.1 303 get token success");
-  Header("Location: $state");
+  Header("Location: $url");
   exit;
+}catch (EverboxClientException $e){
+  echo $e->getMessage();
 }
-echo 'Error Code:', $snda_oauth->getLastErrCode(), '<br />';
-echo 'Error Msg:', $snda_oauth->getLastErrMsg(), '<br />';
-echo 'failed';
-
 ?>

@@ -4,29 +4,38 @@
  * Save file to Everbox
  * @param string $path
  */
-function hmbkp_save_to_everbox( $path ) {
+function hmbkp_save_to_everbox( $filepath ) {
   session_start();
   $sdid =  $_SESSION['sdid'];
   $token = $_SESSION['snda_token'];
-  $config = getSndaConfig();
-  $snda_oauth = new OauthSDK($config['appId'], $config['appSecret'], $config['redirectURI']);
-  $snda_oauth->setParam('oauth_token',$token);
-  $snda_oauth->setParam('sdid',$sdid);
-  $snda_oauth->setParam('method','sdo.everbox.fs.mkdir');
-  $snda_oauth->setParam('path','/home/wpbackup');
-  $result = $snda_oauth->request('GET');
-  //if the error is not dir already exist
-  if ($snda_oauth->getLastErrCode() &&
-    $snda_oauth->getLastErrorCode() != '-50000409') {
-    echo 'Error Code:', $snda_oauth->getLastErrCode(), '<br />';
-    echo 'Error Msg:', $snda_oauth->getLastErrMsg(), '<br />';
-    echo 'failed';
-    exit;
-  } 
-  //echo $path;
-  //echo json_encode($result);
-
-  //print $path;
+  $token_sector = preg_split('~[|.-]~', $token['access_token']);
+  $time = time();
+  if ($time > intval($token_sector[4])){
+    $token = null;
+    echo 'time invalid';
+    return;
+  }
+  $config = include dirname(__FILE__).'/../everbox/apipool.config.hp';
+  $snda_oauth = new SNDAOAuthHTTPClient($config);
+  $snda_oauth->setAccessToken($token);
+  $client = new SNDAEverboxClient($snda_oauth, $config);
+  try{
+    $client->mkdir('/home/wpbackup');
+  }catch (EverboxClientException $e){
+    //not dir already exist
+    if ( $e->getCode() != '-50000409'){
+      echo $e->getInfo();
+    }
+  }
+  try{
+    $filename = basename($filepath);
+    if(strpos($filename) === 0){
+      $filename = substr($filename,1);
+    }
+    $client->put($filepath,'/home/wpbackup/'.$filename);
+  }catch (EverboxClientException $e) {
+    echo $e->getInfo();
+  }
 }
 
 /**
@@ -50,9 +59,9 @@ function hmbkp_conform_everbox_dir( $snda_oauth ) {
 /**
  * Redirect to OAuth service
  */
-function hmbkp_request_token( $encode_filepath ) {
-        $config = getSndaConfig();
-        $snda_oauth = new OauthSDK($config['appId'], $config['appSecret'], $config['redirectURI']);
+function hmbkp_request_everbox_token( $encode_filepath ) {
+        $config = include dirname(__FILE__).'/../everbox/apipool.config.hp';
+        $snda_oauth = new SNDAOAuthHTTPClient($config);
         $oauth_url = $snda_oauth->getAuthorizeURL();
         $protocol = stripos($_SERVER['SERVER_PROTOCOL'], 'https') === false ? 'http://' : 'https://';
         $host = $_SERVER['HTTP_HOST'];

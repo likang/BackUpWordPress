@@ -13,6 +13,6 @@ return array(
 
     'app_key' => '4aca8b1b65dace1aa1d0c54de8d160dc',
     'app_secret' => '86d1ceb4e3f6ca4d7e5546d7bb57ce21',
-    'redirect_uri' => 'http://10.241.34.40/sdo/cb.php',
+    'redirect_uri' => 'http://127.0.1.1/sdo/cb.php',
 );
 
