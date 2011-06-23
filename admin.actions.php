@@ -58,6 +58,32 @@ function hmbkp_request_download_backup() {
 add_action( 'load-tools_page_' . HMBKP_PLUGIN_SLUG, 'hmbkp_request_download_backup' );
 
 /**
+ * Save the download file to everbox,
+ * and then redirect back to the backups page.
+ * If do not have a token or the token is invalid,
+ * it will request a token first.
+ */
+function hmbkp_request_save_to_everbox() {
+
+  if ( !isset( $_GET['hmbkp_save_to_everbox'] ) || empty( $_GET['hmbkp_save_to_everbox'] ) )
+    return false;
+
+  session_start();
+  if ( !isset( $_SESSION['sdid'] )) {
+    if ( !isset( $_GET['sdid']))
+      hmbkp_request_token($_GET['hmbkp_save_to_everbox']);
+    
+    $_SESSION['sdid'] = $_GET['sdid'];
+    $_SESSION['snda_token'] = $_GET['snda_token'];
+    session_write_close();
+  }
+  hmbkp_save_to_everbox( base64_decode( $_GET['hmbkp_save_to_everbox'] ) );
+  wp_redirect( remove_query_arg( array('hmbkp_save_to_everbox', 'sdid', 'snda_token') ));
+  exit;
+}
+add_action( 'load-tools_page_' . HMBKP_PLUGIN_SLUG, 'hmbkp_request_save_to_everbox' );
+
+/**
  * Display the running status via ajax
  *
  * @return void

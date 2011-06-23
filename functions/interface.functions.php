@@ -20,6 +20,7 @@ function hmbkp_get_backup_row( $file ) {
 
 		<td>
 
+			<a href="tools.php?page=<?php echo HMBKP_PLUGIN_SLUG; ?>&amp;hmbkp_save_to_everbox=<?php echo $encode; ?>"><?php _e( 'Save to Everbox', 'hmbkp' ); ?></a> |
 			<a href="tools.php?page=<?php echo HMBKP_PLUGIN_SLUG; ?>&amp;hmbkp_download=<?php echo $encode; ?>"><?php _e( 'Download', 'hmbkp' ); ?></a> |
 			<a href="tools.php?page=<?php echo HMBKP_PLUGIN_SLUG; ?>&amp;hmbkp_delete=<?php echo $encode ?>" class="delete"><?php _e( 'Delete', 'hmbkp' ); ?></a>
 
