@@ -157,6 +157,7 @@ class SNDAOAuthHTTPClient extends EverboxHTTPClient
     
     function setAccessToken($token) {
         $this->accessToken = $token;
+	$this->useAccessToken();
     }
     
     function setSystemToken($token) {

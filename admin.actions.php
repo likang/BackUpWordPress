@@ -69,16 +69,22 @@ function hmbkp_request_save_to_everbox() {
     return false;
 
   session_start();
-  if ( !isset( $_SESSION['sdid'] )) {
-    if ( !isset( $_GET['sdid']))
-      hmbkp_request_everbox_token($_GET['hmbkp_save_to_everbox']);
-    
-    $_SESSION['sdid'] = $_GET['sdid'];
-    $_SESSION['snda_token'] = $_GET['snda_token'];
+  //build snda token
+  if ( isset($_GET['sdid']) and isset($_GET['snda_access_token']) and isset($_GET['snda_expires_in']) ) {
+    $sdid =  $_GET['sdid'];
+    $access_token = $_GET['snda_access_token'];
+    $expires_in = $_GET['snda_expires_in'];
+
+    $token_json = "{\"access_token\":\"$access_token\",\"expires_in\":$expires_in,\"sdid\":\"$sdid\"}";
+    $_SESSION['snda_token'] = json_decode($token_json,true);
+
     session_write_close();
   }
+  if ( !isset( $_SESSION['snda_token'] ) ) {
+    hmbkp_request_everbox_token($_GET['hmbkp_save_to_everbox']);
+  }
   hmbkp_save_to_everbox( base64_decode( $_GET['hmbkp_save_to_everbox'] ) );
-  wp_redirect( remove_query_arg( array('hmbkp_save_to_everbox', 'sdid', 'snda_token') ));
+  wp_redirect( remove_query_arg( array('hmbkp_save_to_everbox', 'sdid', 'snda_access_token', 'snda_expires_in') ));
   exit;
 }
 add_action( 'load-tools_page_' . HMBKP_PLUGIN_SLUG, 'hmbkp_request_save_to_everbox' );

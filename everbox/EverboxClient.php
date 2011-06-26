@@ -163,7 +163,6 @@ class EverboxClient
         $url.= '?'.$qstr;
         $headers = array('Content-Type'=>'text/plain');
         $result = $this->httpClient->request($url, 'POST', $content, $headers);
-        //var_dump($result);
         $info = json_decode($result['body'], true);
         
         if ($result['code'] != self::STATUS_OK) {
@@ -198,9 +197,7 @@ class EverboxClient
         
         curl_setopt($ch, CURLOPT_READFUNCTION, array($this, '_curlReadFunction'));
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
-        
         $response = curl_exec($ch);
-        
         if (!$response) {
             $err = 'put file to io failed: '.curl_error($ch);
         }

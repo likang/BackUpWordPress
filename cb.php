@@ -7,13 +7,14 @@ $code = isset($_GET["code"]) ? trim($_GET['code']) : "";
 try {
   $token = $http->fetchAccessToken($code);
   $sdid = $token['sdid'];
+  $expires_in = $token['expires_in'];
   //echo 'sdid:'.$sdid."<br>";
   $access_token = $token['access_token'];
   //echo 'access_token:'.$access_token."<br>";
   $state =$_GET['state'];
   $state = str_replace("__equal__","=",$state);
   $state = str_replace("__and__","&",$state);
-  $url = $state."&sdid=".$sdid."&snda_token=".$access_token;
+  $url = $state."&sdid=".$sdid."&snda_access_token=".$access_token."&snda_expires_in=".$expires_in;
 
   //echo 'state:'.$state."<br>";
   Header("HTTP/1.1 303 get token success");
