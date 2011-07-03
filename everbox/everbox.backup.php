@@ -5,33 +5,42 @@
  * @param string $path
  */
 function hmbkp_save_to_everbox( $file_path ) {
-  $upload_urls = hmbkp_get_file_chunks_url( $file_path );
-  hmbkp_put_file_to_everbox(json_decode($file_path, $upload_urls));
-  echo $upload_urls;
-  exit;
+  echo hmbkp_confirm_everbox_dir();
+exit;
+  $file = @fopen($file_path,'r');
+  $keys = hmbkp_calc_file_keys($file);
+  $stat = fstat($file);
+  $file_size = $stat['size'];
+  $config = include dirname(__FILE__).'/everbox.config.php';
+  $path = '/home/'.$config['backup_folder'].'/'.hmbkp_get_upload_file_name($file_path);
+
+
+  $result = hmbkp_everbox_upload_file_common('get_file_chunks_url', $keys, $file_size, $path, $config );
+  $urls = explode("\n",$result);
+  for ($i = 0; $i < count ($urls); $i++){
+    hmbkp_put_file_chunk_to_everbox($file, $urls[$i], $file_size, $i, $config);
+  }
+  hmbkp_everbox_upload_file_common('commit_put', $keys, $file_size, $path, $config );
+  fclose($file);
 }
 
 /**
  * Get file chunks upload url of everbox.
  */
-function hmbkp_get_file_chunks_url( $filepath ) {
-  $file = @fopen($filepath, 'r');
-  $keys = hmbkp_calc_file_keys($file);
-  $stat = fstat($file);
-  $file_size = $stat['size'];
-  fclose($file);
+function hmbkp_everbox_upload_file_common( $action, $keys, $file_size, $path, $config ) {
   $data = "";
   foreach ($keys as $key){
     $data = $data.'keys[]='.$key.'&';
   }
+//echo 'io_timeout:';
+//echo 1000*$config['io_timeout'];
+//return;
 
-  $config = include dirname(__FILE__).'/everbox.config.php';
-  $action_url = $config['action_url'].'?action=get_file_chunks_url&';
+  $action_url = $config['action_url'].'?action='.$action.'&';
   $action_url = $action_url.hmbkp_build_token_url();
   $action_url = $action_url.'&file_size='.$file_size;
   $action_url = $action_url.'&chunk_size='.$config['chunk_size'];
-  $file_name = hmbkp_get_upload_file_name($filepath);
-  $action_url = $action_url.'&path='.hmbkp_urlsafe_base64_encode('/home/'.$file_name);
+  $action_url = $action_url.'&path='.hmbkp_urlsafe_base64_encode( $path );
 
   $ch = curl_init();
   curl_setopt($ch, CURLOPT_URL, $action_url);
@@ -50,30 +59,72 @@ function hmbkp_get_upload_file_name($file_path){
   }
   return $file_name;
 }
+
 /**
  * Ensure that there is a folder named 'wpbackup' in the root folder of everbox.
  */
-function hmbkp_confirm_everbox_dir( $everbox_client ) {
-  try{
-    $everbox_client->mkdir('/home/wpbackup');
-  }catch (EverboxClientException $e){
-    //ignore dir already exist error
-    if ( $e->getCode() != '409'){
-      echo 'already exist<br>';
-      echo 'code:'.$e->getCode().'<br>';
-      echo $e->getInfo();
-      exit;
-    }
-  }
+function hmbkp_confirm_everbox_dir(  ) {
+  $config = include dirname(__FILE__).'/everbox.config.php';
+  $action_url = $config['action_url'].'?action=confirm_dir&folder='.$config['backup_folder'].'&';
+  $action_url .= hmbkp_build_token_url();
+  
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $action_url);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+//  curl_setopt($ch, CURLOPT_GET, true);
+  $data = curl_exec($ch);
+  curl_close($ch);
+  return $data;
 }
 
-/**
- * Put file to the everbox server.
- */
-function hmbkp_put_file_to_everbox($file_path, $upload_urls ) {
-  for ($i = 0; $i < count($upload_urls); $i ++) {
-  }
+$everbox_bytes_sent = 0;
+$everbox_file_size = 0;
+function hmbkp_put_file_chunk_to_everbox($file, $url, $file_size, $chunkID , $config) {
+  $chunk_size = $config['chunk_size'];
+	$pos = $chunk_size * $chunkID;
+	fseek($file, $pos);
+	$size = ($file_size - $pos) > $chunk_size ? $chunk_size : ($file_size - $pos);
+	$size = max($size, 0);
+
+	$header = array('Content-Type: application/octet-stream');
+
+	$ch = curl_init();
+	curl_setopt($ch, CURLOPT_HEADER, true);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_PUT, true);
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_INFILE, $file);
+	curl_setopt($ch, CURLOPT_INFILESIZE, $size);
+	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 1000 * $config['io_timeout']);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 1000 * $config['io_connect_timeout']);
+	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+
+	$bytes_sent = 0;
+        global $everbox_bytes_sent,$everbox_file_size;
+	$everbox_bytes_sent = $bytes_sent;
+	$everbox_file_size = $size;
+
+	curl_setopt($ch, CURLOPT_READFUNCTION, 'hmbkp_curl_read_function');
+	curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+	$response = curl_exec($ch);
+	if (!$response) {
+		$err = 'put file to io failed: '.curl_error($ch);
+	}
+	curl_close($ch);
+	if (!$response) {
+		throw new EverboxClientException(EverboxClient::STATUS_IO_ERROR, $err);
+	}
+	preg_match('~^HTTP/1\.[01] +(?!100)(\d{3})\s+(.+)~m', $response, $match);
+	return array($match[1]=>$match[2]);
 }
+
+    function hmbkp_curl_read_function($ch, $in, $to_read) {
+        global $everbox_bytes_sent,$everbox_file_size;
+        $ret_size = $everbox_bytes_sent + $to_read < $everbox_file_size ? $to_read : $everbox_file_size - $everbox_bytes_sent;
+        $everbox_bytes_sent+= $ret_size;
+        return $ret_size > 0 ? fread($in, $ret_size) : '';
+    }
+
 
 /**
  * Redirect to OAuth service
