@@ -606,4 +606,14 @@ function hmbkp_cleanup() {
 
     endif;
 
+}     
+
+function hmbkp_urlsafe_base64_encode($str) {
+  return strtr(base64_encode($str), '+/', '-_');
 }
+
+function hmbkp_urlsafe_base64_decode($str) {
+  return base64_decode(strtr($str, '-_', '+/'));
+}
+
+

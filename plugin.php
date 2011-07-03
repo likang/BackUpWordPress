@@ -66,6 +66,7 @@ function hmbkp_actions() {
 		hmbkp_update();
 
 	require_once( HMBKP_PLUGIN_PATH . '/admin.actions.php' );
+	require_once( HMBKP_PLUGIN_PATH . '/everbox/everbox.actions.php' );
 
 	// Load admin css and js
 	if ( isset( $_GET['page'] ) && $_GET['page'] == HMBKP_PLUGIN_SLUG ) :
@@ -81,8 +82,6 @@ add_action( 'admin_init', 'hmbkp_actions' );
 
 // Load the admin menu
 require_once( HMBKP_PLUGIN_PATH . '/admin.menus.php' );
-require_once( HMBKP_PLUGIN_PATH . '/everbox/EverboxClient.php' );
-require_once( HMBKP_PLUGIN_PATH . '/everbox/SNDAOAuthHTTPClient.php' );
 
 // Load the core functions
 require_once( HMBKP_PLUGIN_PATH . '/functions/core.functions.php' );
@@ -92,7 +91,7 @@ require_once( HMBKP_PLUGIN_PATH . '/functions/backup.mysql.functions.php' );
 require_once( HMBKP_PLUGIN_PATH . '/functions/backup.files.functions.php' );
 require_once( HMBKP_PLUGIN_PATH . '/functions/backup.mysql.fallback.functions.php' );
 require_once( HMBKP_PLUGIN_PATH . '/functions/backup.files.fallback.functions.php' );
-require_once( HMBKP_PLUGIN_PATH . '/functions/backup.everbox.php' );
+require_once( HMBKP_PLUGIN_PATH . '/everbox/everbox.backup.php' );
 
 // Plugin activation and deactivation
 add_action( 'activate_' . HMBKP_PLUGIN_SLUG . '/plugin.php', 'hmbkp_activate' );
