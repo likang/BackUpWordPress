@@ -16,6 +16,7 @@
 		<a class="button add-new-h2" href="tools.php?page=<?php echo $_GET['page']; ?>&amp;action=hmbkp_backup_now"><?php _e( 'Back Up Now', 'hmbkp' ); ?></a>
 
 <?php endif; ?>
+		<a class="button add-new-h2" href="tools.php?page=<?php echo $_GET['page']; ?>&amp;action=hmbkp_show_all_files_in_everbox"><?php _e( 'Show All Files In Everbox', 'hmbkp' ); ?></a>
 
 		<a href="#hmbkp_advanced-options" class="button add-new-h2 hmbkp_advanced-options-toggle"><?php _e( 'Advanced Options' ); ?></a>
 
@@ -34,7 +35,7 @@
 <?php endif; ?>
 
 	<?php include_once( HMBKP_PLUGIN_PATH . '/admin.advanced-options.php' ); ?>
-	
+
 	<p class="howto"><?php printf( __( 'If you need help getting things working you are more than welcome to email us at %s and we\'ll do what we can to help.', 'hmbkp' ), '<a href="mailto:support@humanmade.co.uk">support@humanmade.co.uk</a>' ); ?></p>
 
 </div>

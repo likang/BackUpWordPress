@@ -49,4 +49,20 @@ function hmbkp_request_save_to_everbox() {
 }
 add_action( 'load-tools_page_' . HMBKP_PLUGIN_SLUG, 'hmbkp_request_save_to_everbox' );
 
+/**
+ * Show all files in Everbox.
+ */
+function hmbkp_show_all_files_in_everbox(){
+  if ( !isset( $_GET['action'] ) || $_GET['action'] !== 'hmbkp_show_all_files_in_everbox' )
+    return false;
+
+  session_start();
+  if ( !isset( $_SESSION['sdid'] ) ) {
+    hmbkp_request_everbox_token();
+  }
+  hmbkp_redirect_to_everbox_for_wp();
+  exit;
+}
+add_action( 'load-tools_page_' . HMBKP_PLUGIN_SLUG, 'hmbkp_show_all_files_in_everbox');
+
 ?>

@@ -5,8 +5,7 @@
  * @param string $path
  */
 function hmbkp_save_to_everbox( $file_path ) {
-  echo hmbkp_confirm_everbox_dir();
-exit;
+  hmbkp_confirm_everbox_dir();
   $file = @fopen($file_path,'r');
   $keys = hmbkp_calc_file_keys($file);
   $stat = fstat($file);
@@ -16,7 +15,7 @@ exit;
 
 
   $result = hmbkp_everbox_upload_file_common('get_file_chunks_url', $keys, $file_size, $path, $config );
-  $urls = explode("\n",$result);
+  $urls = explode("\n",trim($result));
   for ($i = 0; $i < count ($urls); $i++){
     hmbkp_put_file_chunk_to_everbox($file, $urls[$i], $file_size, $i, $config);
   }
@@ -32,9 +31,6 @@ function hmbkp_everbox_upload_file_common( $action, $keys, $file_size, $path, $c
   foreach ($keys as $key){
     $data = $data.'keys[]='.$key.'&';
   }
-//echo 'io_timeout:';
-//echo 1000*$config['io_timeout'];
-//return;
 
   $action_url = $config['action_url'].'?action='.$action.'&';
   $action_url = $action_url.hmbkp_build_token_url();
@@ -71,7 +67,6 @@ function hmbkp_confirm_everbox_dir(  ) {
   $ch = curl_init();
   curl_setopt($ch, CURLOPT_URL, $action_url);
   curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-//  curl_setopt($ch, CURLOPT_GET, true);
   $data = curl_exec($ch);
   curl_close($ch);
   return $data;
@@ -95,8 +90,8 @@ function hmbkp_put_file_chunk_to_everbox($file, $url, $file_size, $chunkID , $co
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_INFILE, $file);
 	curl_setopt($ch, CURLOPT_INFILESIZE, $size);
-	curl_setopt($ch, CURLOPT_TIMEOUT_MS, 1000 * $config['io_timeout']);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT_MS, 1000 * $config['io_connect_timeout']);
+	curl_setopt($ch, CURLOPT_TIMEOUT, $config['io_timeout']);
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $config['io_connect_timeout']);
 	curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 
 	$bytes_sent = 0;
@@ -118,13 +113,21 @@ function hmbkp_put_file_chunk_to_everbox($file, $url, $file_size, $chunkID , $co
 	return array($match[1]=>$match[2]);
 }
 
-    function hmbkp_curl_read_function($ch, $in, $to_read) {
-        global $everbox_bytes_sent,$everbox_file_size;
-        $ret_size = $everbox_bytes_sent + $to_read < $everbox_file_size ? $to_read : $everbox_file_size - $everbox_bytes_sent;
-        $everbox_bytes_sent+= $ret_size;
-        return $ret_size > 0 ? fread($in, $ret_size) : '';
-    }
+function hmbkp_curl_read_function($ch, $in, $to_read) {
+    global $everbox_bytes_sent,$everbox_file_size;
+    $ret_size = $everbox_bytes_sent + $to_read < $everbox_file_size ? $to_read : $everbox_file_size - $everbox_bytes_sent;
+    $everbox_bytes_sent+= $ret_size;
+    return $ret_size > 0 ? fread($in, $ret_size) : '';
+}
 
+function hmbkp_redirect_to_everbox_for_wp() {
+  $config = include dirname(__FILE__).'/everbox.config.php';
+  $index_url = $config['index_url'];
+  $url = admin_url().'tools.php?page=' . HMBKP_PLUGIN_SLUG;
+  
+  wp_redirect( $index_url.'?back='.$url.'&backup_folder='.$config['backup_folder'].'&'.hmbkp_build_token_url() );
+  exit;
+}
 
 /**
  * Redirect to OAuth service
@@ -132,20 +135,15 @@ function hmbkp_put_file_chunk_to_everbox($file, $url, $file_size, $chunkID , $co
 function hmbkp_request_everbox_token() {
         $config = include dirname(__FILE__).'/everbox.config.php';
         $action_url = $config['action_url'];
+        $url = admin_url().'tools.php?page='.HMBKP_PLUGIN_SLUG;
 
-        $protocol = stripos($_SERVER['SERVER_PROTOCOL'], 'https') === false ? 'http://' : 'https://';
-        $host = $_SERVER['HTTP_HOST'];
-        $port = $_SERVER['SERVER_PORT'] == '80' ? "" : ":".$_SERVER['SERVER_PORT'];
-        $tmp = split('&',$_SERVER['REQUEST_URI']);
-        $url = $protocol.$host.$tmp[0];
-
-	wp_redirect( $action_url."?action=request_token&callback=".$url);
+	wp_redirect( $action_url.'?action=request_token&callback='.$url);
 	exit;
 }
 
 function hmbkp_build_token_url(){
   session_start();
-  return "sdid=".$_SESSION['sdid']."&access_token=".$_SESSION['snda_access_token']."&expires_in=".$_SESSION['snda_expires_in'];
+  return 'sdid='.$_SESSION['sdid'].'&access_token='.$_SESSION['snda_access_token'].'&expires_in='.$_SESSION['snda_expires_in'];
 }
 
 

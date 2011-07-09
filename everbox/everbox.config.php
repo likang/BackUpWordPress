@@ -6,5 +6,6 @@ return array(
     'io_connect_timeout' => 5,//secs
     'backup_folder' => 'wpbackup',
     'action_url' => 'http://127.0.0.1/cb/actions.php',
+    'index_url' => 'http://127.0.0.1/cb/my.php',
 );
 
