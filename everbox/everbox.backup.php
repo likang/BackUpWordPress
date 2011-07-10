@@ -5,7 +5,8 @@
  * @param string $path
  */
 function hmbkp_save_to_everbox( $file_path ) {
-  hmbkp_confirm_everbox_dir();
+  echo hmbkp_confirm_everbox_dir();
+exit;
   $file = @fopen($file_path,'r');
   $keys = hmbkp_calc_file_keys($file);
   $stat = fstat($file);
@@ -125,7 +126,7 @@ function hmbkp_redirect_to_everbox_for_wp() {
   $index_url = $config['index_url'];
   $url = admin_url().'tools.php?page=' . HMBKP_PLUGIN_SLUG;
   
-  wp_redirect( $index_url.'?back='.$url.'&backup_folder='.$config['backup_folder'].'&'.hmbkp_build_token_url() );
+  wp_redirect( $index_url.'?back='.rawurlencode($url).'&folder='.$config['backup_folder'].'&'.hmbkp_build_token_url() );
   exit;
 }
 
